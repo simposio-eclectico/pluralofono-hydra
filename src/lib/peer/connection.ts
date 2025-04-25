@@ -1,6 +1,8 @@
-import avro, { Schema } from 'avsc';
 import { Buffer } from 'buffer';
-import { BitTorrentSignaling } from '../ipfs/signaling';
+globalThis.Buffer = Buffer;
+
+import avro, { Schema } from 'avsc';
+import { BitTorrentSignaling } from '../ipfs/signaling-torrent';
 
 export type PeerConnectionWithHooks = PeerConnection & {
   onDataChannelOpen?: () => void;
@@ -18,8 +20,10 @@ export class PeerConnection {
   private remoteId: string | null = null;
   private localId: string;
   private isOfferer: boolean = false;
+  static connectedPeers: Set<string> = new Set();
 
   constructor(localId: string, avroSchema: Schema, infoHash: Uint8Array, peerId: Uint8Array) {
+    console.log('peerconnection constructor');
     this.localId = localId;
     this.avroType = avro.Type.forSchema(avroSchema);
     this.signaling = new BitTorrentSignaling(infoHash, peerId);
@@ -52,6 +56,7 @@ export class PeerConnection {
     };
     this.peerConnection.ondatachannel = (event) => {
       this.dataChannel = event.channel;
+      console.log('[RTC] DataChannel creado por ofertante');
       this.setupDataChannel();
       console.log('[ondatachannel] remoteId:', this.remoteId);
       if (this.remoteId) {
@@ -75,22 +80,27 @@ export class PeerConnection {
     if (!this.dataChannel) return;
     this.dataChannel.binaryType = 'arraybuffer';
     this.dataChannel.onopen = () => {
-      console.log('[dataChannel.onopen] remoteId:', this.remoteId);
+      console.log('[RTC][dataChannel.onopen] remoteId:', this.remoteId);
       if (this.remoteId) {
         PeerConnection.connectedPeers.add(this.remoteId);
-        console.log('[dataChannel.onopen] Peer agregado al set:', this.remoteId, PeerConnection.connectedPeers);
+        console.log('[RTC][dataChannel.onopen] Peer agregado al set:', this.remoteId, PeerConnection.connectedPeers);
       }
+      console.log('ahy wea', this)
       if ((this as any).onDataChannelOpen) {
+        console.log('su hay wea');
         (this as any).onDataChannelOpen();
       }
-      console.log('DataChannel abierto');
+      console.log('[RTC] DataChannel abierto');
     };
     this.dataChannel.onclose = () => {
       if (this.remoteId) {
         PeerConnection.connectedPeers.delete(this.remoteId);
         console.log('[dataChannel.onclose] Peer eliminado del set:', this.remoteId, PeerConnection.connectedPeers);
       }
-      console.log('DataChannel cerrado');
+      console.log('[RTC] DataChannel cerrado');
+    };
+    this.dataChannel.onerror = (err) => {
+      console.error('[RTC] DataChannel error', err);
     };
     this.dataChannel.onmessage = (event) => {
       const buf = new Uint8Array(event.data);

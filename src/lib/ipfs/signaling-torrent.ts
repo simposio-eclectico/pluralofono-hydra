@@ -6,8 +6,8 @@ import { onNewPeer } from '../global';
 
 const TRACKER_URLS = [
   'wss://tracker.openwebtorrent.com',
-  'wss://tracker.btorrent.xyz',
-  'wss://tracker.webtorrent.dev'
+  'wss://tracker.btorrent.xyz:443',
+  'wss://tracker.files.fm:7073/announce',
 ];
 
 const peers: Map<string, any> = new Map();
@@ -16,7 +16,7 @@ export class BitTorrentSignaling {
   private client: any;
   private infoHash: Uint8Array;
   private peerId: Uint8Array;
-  private onSignalCallback: (msg: string, remotePeerId: string) => void = () => {};
+  private onSignalCallback: (msg: string, remotePeerId: string) => void = () => { };
 
   constructor(infoHash: Uint8Array, peerId: Uint8Array) {
     this.infoHash = infoHash;
@@ -43,6 +43,10 @@ export class BitTorrentSignaling {
         const msg = new TextDecoder().decode(data);
         this.onSignalCallback(msg, remotePeerId);
       });
+      trackerPeer.on('close', () => {
+        peers.delete(remotePeerId);
+        console.log('[TRACKER] Peer cerrado:', remotePeerId);
+      });
     });
     this.client.start();
   }
@@ -52,11 +56,42 @@ export class BitTorrentSignaling {
     console.log('[SIGNAL] Enviando señalización:', msg, 'a', remotePeerId || 'todos');
     const data = new TextEncoder().encode(msg);
     if (remotePeerId && peers.has(remotePeerId)) {
-      peers.get(remotePeerId).send(data);
+      const peer = peers.get(remotePeerId);
+      if (peer) {
+        if (typeof peer.connected !== 'undefined' && !peer.connected) {
+          console.warn('[SIGNAL] Peer no está conectado, se omite');
+        } else if (peer._channel && peer._channel.readyState !== 'open') {
+          console.warn('[SIGNAL] Canal interno NO abierto, se omite');
+        } else {
+          try {
+            peer.send(data);
+          } catch (err) {
+            console.error('[SIGNAL] Error enviando señalización:', err);
+          }
+        }
+      } else {
+        console.warn('[SIGNAL] Peer para', remotePeerId, 'es null, se omite');
+      }
     } else {
-      // Broadcast a todos los peers conectados
       for (const peer of peers.values()) {
-        peer.send(data);
+        if (!peer) {
+          console.warn('[SIGNAL] Peer es null o undefined, se omite');
+          continue;
+        }
+        if (typeof peer.connected !== 'undefined' && !peer.connected) {
+          console.warn('[SIGNAL] Peer no está conectado, se omite');
+          continue;
+        }
+        // Opcional: chequea el canal interno
+        if (peer._channel && peer._channel.readyState !== 'open') {
+          console.warn('[SIGNAL] Canal interno NO abierto, se omite');
+          continue;
+        }
+        try {
+          peer.send(data);
+        } catch (err) {
+          console.error('[SIGNAL] Error enviando señalización:', err);
+        }
       }
     }
   }

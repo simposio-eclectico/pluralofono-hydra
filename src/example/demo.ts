@@ -1,7 +1,12 @@
+import { Buffer } from 'buffer';
+globalThis.Buffer = Buffer;
+
 import { audioCtx, dataChannelReady, peerConnections, setPeerListUpdateCallback } from '../lib/global';
-import { BitTorrentSignaling } from '../lib/ipfs/signaling';
+import { WebSocketSignaling } from '../lib/ipfs/signaling-ws';
 import { asciiToBytes20, randomBytes20, toHex } from '../lib/utils';
 import Oscillator from '../oscilator';
+
+
 
 async function main() {
   // Define infoHash (ambos peers deben usar el mismo valor, 20 bytes ASCII)
@@ -13,7 +18,7 @@ async function main() {
 
 
   // Inicializa el signaling global para este peer
-  const signaling = new BitTorrentSignaling(infoHash, peerId);
+  const signaling = new WebSocketSignaling(infoHash, peerId);
   await signaling.start(); // Esto conecta al tracker y permite detectar otros peers. SIN ESTO NO HAY COMUNICACIÓN.
 
   document.body.insertAdjacentHTML('beforebegin', `<div id="peerid-panel" style="position:fixed;top:24px;left:0;background:#222;color:#fff;padding:4px;z-index:2000;">Mi PeerID: ${toHex(peerId)}</div>`);
@@ -74,6 +79,7 @@ async function main() {
 
   // Envía estado a todos los peers conectados cuyo canal esté abierto
   function sendOscState(freq: number, gain: number) {
+    console.log(dataChannelReady)
     Object.entries(peerConnections).forEach(([remotePeerId, conn]) => {
       if (dataChannelReady[remotePeerId]) {
         console.log(`[SEND] Enviando estado a ${remotePeerId}:`, { freq, gain });

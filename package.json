@@ -4,16 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
-    "vite": "^5.2.0",
-    "vite-plugin-node-polyfills": "^0.22.0"
+    "astro": "^5.7.5",
+    "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@astrojs/node": "^9.2.1",
     "@chainsafe/libp2p-gossipsub": "^14.1.1",
     "@chainsafe/libp2p-noise": "^16.1.3",
     "@libp2p/bootstrap": "^11.0.35",
@@ -30,6 +30,7 @@
     "libp2p": "^2.8.5",
     "peerjs": "^1.5.4",
     "qrcode": "^1.5.4",
+    "vite-plugin-node-polyfills": "^0.23.0",
     "webtorrent": "^2.6.3"
   }
 }

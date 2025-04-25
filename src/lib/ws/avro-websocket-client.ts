@@ -1,8 +1,8 @@
-import avro from "avsc";
 import { Buffer } from 'buffer';
+globalThis.Buffer = Buffer;
+
+import avro from "avsc";
 import midiSchema from "../../schema/midi-schema";
-// @ts-ignore
-globalThis.Buffer = Buffer
 
 interface Logger {
   message: string;

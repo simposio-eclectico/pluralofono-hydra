@@ -1,3 +1,6 @@
+import { Buffer } from 'buffer';
+globalThis.Buffer = Buffer;
+
 import avro from "avsc";
 
 const midiSchema: avro.Schema = {

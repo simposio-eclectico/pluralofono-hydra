@@ -24,6 +24,7 @@ export function onNewPeer({ remotePeerId, infoHash, peerId }:
         if (peerListUpdateCallback) peerListUpdateCallback();
         conn.startSignaling();
         if (toHex(peerId) > stringRemotePeerId) {
+            console.log('creando oferta')
             conn.createOffer();
         }
     }
@@ -40,9 +41,20 @@ export const dataChannelReady: Record<string, boolean> = {};
 
 // Asigna hooks para cada nueva conexión
 export function setupPeerHooks(conn: PeerConnectionWithHooks, remotePeerId: string) {
+    console.log('[RTC] Asignando hooks para peer', remotePeerId);
+    console.log('[RTC] Asignando hooks para peer', remotePeerId);
     conn.onDataChannelOpen = function () {
+        console.log('[RTC] DataChannel abierto para peer', remotePeerId);
         dataChannelReady[remotePeerId] = true;
         console.log(`[UI] DataChannel listo para enviar a ${remotePeerId}`);
+    };
+    // Limpieza automática al cerrar canal de datos
+    conn.onRemotePeerDisconnected = function (remotePeerId: string) {
+        console.log('[RTC] Peer desconectado, limpiando:', remotePeerId);
+        delete peerConnections[remotePeerId];
+        delete remoteOscillators[remotePeerId];
+        delete dataChannelReady[remotePeerId];
+        if (peerListUpdateCallback) peerListUpdateCallback();
     };
     conn.onRemoteOscData = function (msg: { from: string, freq: number, gain: number }) {
         console.log('[RECV]', msg);
