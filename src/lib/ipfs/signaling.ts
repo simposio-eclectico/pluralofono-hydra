@@ -7,9 +7,7 @@ import { onNewPeer } from '../global';
 const TRACKER_URLS = [
   'wss://tracker.openwebtorrent.com',
   'wss://tracker.btorrent.xyz',
-  'wss://tracker.webtorrent.dev',
-  'wss://tracker.fastcast.nz',
-  'wss://signal.torrentcdn.com'
+  'wss://tracker.webtorrent.dev'
 ];
 
 const peers: Map<string, any> = new Map();
@@ -21,7 +19,6 @@ export class BitTorrentSignaling {
   private onSignalCallback: (msg: string, remotePeerId: string) => void = () => {};
 
   constructor(infoHash: Uint8Array, peerId: Uint8Array) {
-    console.log('weaweeawea')
     this.infoHash = infoHash;
     this.peerId = peerId;
     this.client = new TrackerClient({
@@ -40,7 +37,6 @@ export class BitTorrentSignaling {
     // Cuando se conecta a otro peer vía tracker
     this.client.on('peer', (trackerPeer: any) => {
       const remotePeerId = trackerPeer.id || trackerPeer._id || '(unknown)';
-      console.log('onNewPeer is', onNewPeer);
       onNewPeer({ remotePeerId, infoHash: this.infoHash, peerId: this.peerId });
       peers.set(remotePeerId, trackerPeer);
       trackerPeer.on('data', (data: Uint8Array) => {

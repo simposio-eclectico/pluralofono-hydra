@@ -20,7 +20,6 @@ export class PeerConnection {
   private isOfferer: boolean = false;
 
   constructor(localId: string, avroSchema: Schema, infoHash: Uint8Array, peerId: Uint8Array) {
-    console.log('peerconnection constructor')
     this.localId = localId;
     this.avroType = avro.Type.forSchema(avroSchema);
     this.signaling = new BitTorrentSignaling(infoHash, peerId);
@@ -30,7 +29,6 @@ export class PeerConnection {
   }
 
   async startSignaling() {
-    console.log('llamadooo')
     await this.signaling.start();
     this.signaling.onSignal(async (msg: string, remotePeerId: string) => {
       console.log('[SIGNAL] Mensaje recibido de peer:', remotePeerId, msg);

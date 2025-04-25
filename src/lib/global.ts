@@ -16,10 +16,8 @@ export function setPeerListUpdateCallback(cb: () => void) {
 // Cuando se detecta un nuevo peer, crea la conexión y asigna hooks
 export function onNewPeer({ remotePeerId, infoHash, peerId }:
     { remotePeerId: Uint8Array, infoHash: Uint8Array, peerId: Uint8Array }) {
-    console.log('onnewpeer llamadooo')
     const stringRemotePeerId = toHex(remotePeerId);
     if (!peerConnections[stringRemotePeerId]) {
-        console.log('onNewPeer ejecutado para', stringRemotePeerId);
         const conn = new PeerConnection(stringRemotePeerId, avroSchema, infoHash, remotePeerId);
         peerConnections[stringRemotePeerId] = conn;
         setupPeerHooks(conn, stringRemotePeerId);
@@ -47,7 +45,7 @@ export function setupPeerHooks(conn: PeerConnectionWithHooks, remotePeerId: stri
         console.log(`[UI] DataChannel listo para enviar a ${remotePeerId}`);
     };
     conn.onRemoteOscData = function (msg: { from: string, freq: number, gain: number }) {
-        console.log('RECV', msg);
+        console.log('[RECV]', msg);
         if (!remoteOscillators[msg.from]) {
             remoteOscillators[msg.from] = new Oscillator(audioCtx);
             remoteOscillators[msg.from].start();
