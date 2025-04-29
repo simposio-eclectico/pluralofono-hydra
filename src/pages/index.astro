@@ -1,16 +1,62 @@
 ---
 // Puedes agregar props o imports aquí
 ---
+<style>
+  body {
+    font-family: 'Coral Pixels', sans-serif;
+  }
+  .panel {
+    color:#fff;
+    padding:4px;
+    z-index: 1000;
+    display: flex;
+  }
+  .panels {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  #osc-canvas {
+    width: 100vw;
+    height: 100vh;
+    z-index: 2000;
+  }
+  #overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    font-size: 2rem;
+  }
+</style>
+
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Coral+Pixels&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <title>Pluralófono</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
   </head>
   <body>
-    <h1>¡Bienvenido a Pluralófono!</h1>
-    <p>Astro está funcionando. Integra aquí tu app WebRTC.</p>
-    <div id="app"></div>
-    <script type="module" src="/src/example/demo.ts"></script>
+    <div id="overlay">Haz click para activar el audio</div>
+    <div id="app">
+      <div class="panels">
+        <div class="panel" id="infohash-panel">InfoHash: </div>
+        <div class="panel" id="peerid-panel">Mi PeerID: </div>
+        <div class="panel" id="peer-list-panel">Peers conectados: <i>Ninguno</i></div>
+      </div>
+      <div><canvas id="osc-canvas"></canvas></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
