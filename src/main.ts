@@ -1,10 +1,12 @@
 import { Buffer } from 'buffer';
 globalThis.Buffer = Buffer;
 
-import { audioCtx, dataChannelReady, peerConnections, setPeerListUpdateCallback } from './lib/global';
-import { WebSocketSignaling } from './lib/ipfs/signaling-ws';
+import { audioCtx, peerConnections, setPeerListUpdateCallback } from './lib/global';
 import { asciiToBytes20, randomBytes20, toHex } from './lib/utils';
+import { AvroWebSocketClient } from './lib/ws/avro-websocket-client';
 import Oscillator from './oscilator';
+import Reproductor from './reproductor';
+import Theremin from './theremin';
 
 
 
@@ -14,10 +16,6 @@ async function main() {
 
   // Genera un peerId aleatorio de 20 bytes
   const peerId = randomBytes20();
-
-  // Inicializa el signaling global para este peer
-  const signaling = new WebSocketSignaling(infoHash, peerId);
-  await signaling.start(); // Esto conecta al tracker y permite detectar otros peers. SIN ESTO NO HAY COMUNICACIÓN.
 
   document.querySelector('#peerid-panel')!.innerHTML = `Mi PeerID: ${toHex(peerId)}`;
   document.querySelector('#infohash-panel')!.innerHTML = `InfoHash: ${toHex(infoHash)}`;
@@ -41,58 +39,23 @@ async function main() {
   canvas.height = window.innerHeight;
   // Oscilador local
   const osc = new Oscillator(audioCtx);
+  const rep = new Reproductor({audioContext: audioCtx, canvas});
+  const avroWebSocketClient = new AvroWebSocketClient({ onMessageCallback: (msg: any) => rep.playAndDraw({x: msg.freq, y: msg.gain}), username: 'test', logger: {
+    isOpen: true,
+    message: ""
+  } });
+  const theremin = new Theremin({oscillator: osc, webSocketClient: avroWebSocketClient, canvas});
 
   // Overlay para pedir interacción del usuario
   const overlay = document.getElementById('overlay') as HTMLDivElement;
 
   function startAudio() {
     audioCtx.resume().then(() => {
-      osc.start();
+      theremin.start();
       overlay.remove();
     });
   }
   overlay.addEventListener('click', startAudio);
-
-  // Estado local
-  let lastFreq = 0;
-  let lastGain = 0;
-
-
-
-  // Envía estado a todos los peers conectados cuyo canal esté abierto
-  function sendOscState(freq: number, gain: number) {
-    Object.entries(peerConnections).forEach(([remotePeerId, conn]) => {
-      if (dataChannelReady[remotePeerId]) {
-        console.log(`[SEND] Enviando estado a ${remotePeerId}:`, { freq, gain });
-        conn.send({ from: toHex(peerId), freq, gain });
-      } else {
-        // Solo loguea si intentamos enviar a un peer no listo
-        console.warn(`[SEND] Intento de enviar antes de que el canal esté listo con ${remotePeerId}`);
-      }
-    });
-  }
-
-  // Control por mouse/touch
-  function handleControl(x: number, y: number) {
-    const freq = x / canvas.width;
-    const gain = 1 - y / canvas.height;
-    osc.setFrequency(freq);
-    osc.setGain(gain);
-    lastFreq = freq;
-    lastGain = gain;
-    sendOscState(freq, gain);
-  }
-  canvas.addEventListener('mousemove', (e) => {
-    if (e.buttons > 0) handleControl(e.offsetX, e.offsetY);
-  });
-
-  canvas.addEventListener('touchmove', (e) => {
-    if (e.touches.length > 0) {
-      const t = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      handleControl(t.clientX - rect.left, t.clientY - rect.top);
-    }
-  });
 
 }
 

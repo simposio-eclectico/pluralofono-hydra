@@ -1,6 +1,6 @@
 import Oscillator from "../oscilator";
-import { avroSchema } from "../schema/simple-schema";
-import { PeerConnection, PeerConnectionWithHooks } from "./peer/connection";
+import { simpleSchema } from "../schema/simple-schema";
+import { PeerConnection, PeerConnectionWithHooks } from "./peer/peer-connection";
 import { toHex } from "./utils";
 
 export type SetupPeerHooks = (conn: PeerConnectionWithHooks, remotePeerId: string) => void;
@@ -14,11 +14,13 @@ export function setPeerListUpdateCallback(cb: () => void) {
 }
 
 // Cuando se detecta un nuevo peer, crea la conexión y asigna hooks
-export function onNewPeer({ remotePeerId, infoHash, peerId }:
-    { remotePeerId: Uint8Array, infoHash: Uint8Array, peerId: Uint8Array }) {
+export type OnNewPeerParams = 
+    { remotePeerId: Uint8Array, infoHash: Uint8Array, peerId: Uint8Array };
+
+export function onNewPeer({ remotePeerId, infoHash, peerId }: OnNewPeerParams) {
     const stringRemotePeerId = toHex(remotePeerId);
     if (!peerConnections[stringRemotePeerId]) {
-        const conn = new PeerConnection(stringRemotePeerId, avroSchema, infoHash, remotePeerId);
+        const conn = new PeerConnection(stringRemotePeerId, simpleSchema, infoHash, remotePeerId);
         peerConnections[stringRemotePeerId] = conn;
         setupPeerHooks(conn, stringRemotePeerId);
         if (peerListUpdateCallback) peerListUpdateCallback();

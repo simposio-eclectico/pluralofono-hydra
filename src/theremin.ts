@@ -1,7 +1,13 @@
-import { AvroWebSocketClient } from "./lib/ws/avro-websocket-client";
+import { WebSocketClientInterface } from "./lib/ws/websocket.interface";
 import Oscillator from "./oscilator";
 // @ts-ignore
 const AudioContext: any = window.AudioContext || window.webkitAudioContext;
+
+export type ThereminProps = {
+  oscillator: Oscillator;
+  webSocketClient: WebSocketClientInterface;
+  canvas: HTMLCanvasElement;
+};
 
 export default class Theremin {
   private canvas: HTMLCanvasElement;
@@ -13,13 +19,15 @@ export default class Theremin {
   private currY: number;
   private strokeStyle: string;
   private lineWidth: number;
-  private webSocketClient: AvroWebSocketClient;
-  oscillator: Oscillator | undefined;
+  private webSocketClient: WebSocketClientInterface;
+  oscillator: Oscillator;
   scaledX: number;
   scaledY: number;
   inited: boolean;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor({oscillator, webSocketClient, canvas}: ThereminProps) {
+    this.oscillator = oscillator;
+    this.webSocketClient = webSocketClient;
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d")!;
     this.isPlaying = false;
@@ -32,10 +40,6 @@ export default class Theremin {
     this.strokeStyle = "black";
     this.lineWidth = 2;
     this.inited = false;
-    this.webSocketClient = new AvroWebSocketClient({ onMessageCallback: console.log, username: 'test', logger: {
-      isOpen: true,
-      message: ""
-    } });
 
     canvas.addEventListener(
       "mousemove",
@@ -102,7 +106,13 @@ export default class Theremin {
     if (this.oscillator) {
       this.oscillator.setFrequency(this.scaledX);
       this.oscillator.setGain(this.scaledY);
-      this.webSocketClient.send("prueba");
+      // Mensaje compatible con simple-schema.ts
+      const msg = {
+        from: 'local', // puedes reemplazar por un identificador real si lo tienes
+        freq: this.scaledX,
+        gain: this.scaledY
+      };
+      this.webSocketClient.send(msg);
     }
   }
 
@@ -126,8 +136,6 @@ export default class Theremin {
 
   private point(e: MouseEvent | Touch) {
     if (!this.inited) {
-      const audioContext = new AudioContext() as AudioContext; 
-      this.oscillator = new Oscillator(audioContext);
       this.oscillator.start();
       this.inited = true;
     }
@@ -139,5 +147,10 @@ export default class Theremin {
       this.ctx.fillRect(this.currX, this.currY, 2, 2);
       this.ctx.closePath();
     }
+  }
+
+  public start() {
+    this.oscillator.start();
+    this.inited = true;
   }
 }

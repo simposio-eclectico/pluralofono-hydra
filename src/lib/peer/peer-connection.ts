@@ -22,10 +22,10 @@ export class PeerConnection {
   private isOfferer: boolean = false;
   static connectedPeers: Set<string> = new Set();
 
-  constructor(localId: string, avroSchema: Schema, infoHash: Uint8Array, peerId: Uint8Array) {
+  constructor(localId: string, simpleSchema: Schema, infoHash: Uint8Array, peerId: Uint8Array) {
     console.log('peerconnection constructor');
     this.localId = localId;
-    this.avroType = avro.Type.forSchema(avroSchema);
+    this.avroType = avro.Type.forSchema(simpleSchema);
     this.signaling = new BitTorrentSignaling(infoHash, peerId);
     this.peerConnection = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -126,3 +126,17 @@ export class PeerConnection {
     return this.localId;
   }
 }
+/* OLD CODE: Posible implementación de broadcast sobre WebRTC, pero nada seguro aún
+// Envía estado a todos los peers conectados cuyo canal esté abierto
+function sendOscState(freq: number, gain: number) {
+  Object.entries(peerConnections).forEach(([remotePeerId, conn]) => {
+    if (dataChannelReady[remotePeerId]) {
+      console.log(`[SEND] Enviando estado a ${remotePeerId}:`, { freq, gain });
+      conn.send({ from: toHex(peerId), freq, gain });
+    } else {
+      // Solo loguea si intentamos enviar a un peer no listo
+      console.warn(`[SEND] Intento de enviar antes de que el canal esté listo con ${remotePeerId}`);
+    }
+  });
+}
+  */

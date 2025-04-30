@@ -1,7 +1,8 @@
-// src/lib/ipfs/signaling.ts
 // Señalización WebRTC usando WebSocket como canal de signaling
-// La URL del WebSocket se toma de la variable de entorno PUBLIC_WS_URL
 
+import { onNewPeer } from "../global";
+
+// La URL del WebSocket se toma de la variable de entorno PUBLIC_SIGNALING_URL
 export class WebSocketSignaling {
   private ws: WebSocket;
   private infoHash: Uint8Array;
@@ -13,9 +14,9 @@ export class WebSocketSignaling {
   constructor(infoHash: Uint8Array, peerId: Uint8Array) {
     this.infoHash = infoHash;
     this.peerId = peerId;
-    const wsUrl = import.meta.env.PUBLIC_WS_URL;
+    const wsUrl = import.meta.env.PUBLIC_SIGNALING_URL;
     if (!wsUrl) {
-      throw new Error('PUBLIC_WS_URL no definida en las variables de entorno');
+      throw new Error('PUBLIC_SIGNALING_URL no definida en las variables de entorno');
     }
     this.ws = new WebSocket(wsUrl);
     this.ws.onopen = () => {
@@ -29,9 +30,8 @@ export class WebSocketSignaling {
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        // Espera que el backend envíe { from: ..., msg: ... }
-        if (data && data.msg && data.from) {
-          this.onSignalCallback(data.msg, data.from);
+        if(data.type === 'userlist') {
+          onNewPeer({ remotePeerId: data.peers, infoHash: this.infoHash, peerId: this.peerId });
         }
       } catch (err) {
         console.warn('[WS-SIGNAL] Mensaje no JSON:', event.data);
@@ -50,10 +50,14 @@ export class WebSocketSignaling {
     // No-op: el WebSocket se conecta en el constructor
   }
 
-  sendSignal(msg: string, remotePeerId?: string) {
+  sendBroadcast(msg: string) {
+    this.sendSignal(msg);
+  }
+
+  sendSignal(msg: string, remotePeerIds?: string[]) {
     const payload = JSON.stringify({
       type: 'signal',
-      to: remotePeerId,
+      to: remotePeerIds, // si es null, el ws lo broadcasteará
       from: Array.from(this.peerId),
       infoHash: Array.from(this.infoHash),
       msg,
