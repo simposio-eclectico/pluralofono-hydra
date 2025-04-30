@@ -39,7 +39,6 @@ async function main() {
   const canvas = document.getElementById('osc-canvas') as HTMLCanvasElement;
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-
   // Oscilador local
   const osc = new Oscillator(audioCtx);
 
@@ -62,7 +61,6 @@ async function main() {
 
   // Envía estado a todos los peers conectados cuyo canal esté abierto
   function sendOscState(freq: number, gain: number) {
-    console.log(dataChannelReady)
     Object.entries(peerConnections).forEach(([remotePeerId, conn]) => {
       if (dataChannelReady[remotePeerId]) {
         console.log(`[SEND] Enviando estado a ${remotePeerId}:`, { freq, gain });

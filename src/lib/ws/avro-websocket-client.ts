@@ -28,7 +28,11 @@ export class AvroWebSocketClient {
   private socket: WebSocket;
   private schema: avro.Type;
   constructor({ onMessageCallback, username, logger }: ConnectOptions) {
-    this.socket = new WebSocket(`ws://localhost:9876/ws?username=${username}`);
+    const wsUrl = import.meta.env.PUBLIC_WS_URL;
+    if (!wsUrl) {
+      throw new Error('PUBLIC_WS_URL no definida en las variables de entorno');
+    }
+    this.socket = new WebSocket(`${wsUrl}?username=${username}`);
     this.schema = avro.Type.forSchema(midiSchema);
 
     /**
